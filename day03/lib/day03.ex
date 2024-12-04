@@ -6,25 +6,25 @@ defmodule Day03 do
     ("priv/" <> file_name)
     |> File.stream!()
     |> Stream.map(fn line ->
-      line = String.trim_trailing(line)
-
-      parse_multiply(line)
+      line
+      |> String.trim_trailing()
+      |> parse_multiply()
     end)
     |> Enum.sum()
   end
 
   def part2(file_name \\ "input.txt") do
-    input =
+    text =
       ("priv/" <> file_name)
       |> File.read!()
       |> String.replace("\n", "")
-
-    text =
-      if String.starts_with?(input, "do()") do
-        input
-      else
-        "do()" <> input
-      end
+      |> then(fn input ->
+        if String.starts_with?(input, "do()") do
+          input
+        else
+          "do()" <> input
+        end
+      end)
 
     Regex.scan(@do_regex, text, capture: :first)
     |> List.flatten()
@@ -36,7 +36,10 @@ defmodule Day03 do
     Regex.scan(@multiply_regex, line)
     |> List.flatten()
     |> Enum.map(fn text ->
-      text |> String.split(",") |> Enum.map(&String.to_integer/1) |> Enum.product()
+      text
+      |> String.split(",")
+      |> Enum.map(&String.to_integer/1)
+      |> Enum.product()
     end)
     |> Enum.sum()
   end
