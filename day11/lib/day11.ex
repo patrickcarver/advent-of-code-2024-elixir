@@ -1,8 +1,42 @@
 defmodule Day11 do
-  def part1(file_name \\ "test.txt", blinks \\ 6) do
+  def part1(file_name \\ "input.txt") do
+    run(file_name, 25)
+  end
+
+  def part2(file_name \\ "input.txt") do
+    run(file_name, 75)
+  end
+
+  def run(file_name \\ "test.txt", blinks \\ 6) do
     ("priv/" <> file_name)
     |> load_data()
-    |> apply_rules(blinks)
+    |> blink(blinks)
+  end
+
+  def blink(stone_freqs, 0) do
+    Enum.reduce(stone_freqs, 0, fn {_key, value}, acc -> acc + value end)
+  end
+
+  def blink(stone_freqs, blink) do
+    new_stone_freqs =
+      Enum.reduce(stone_freqs, %{}, fn {key, value}, acc ->
+        cond do
+          key == 0 ->
+            Map.update(acc, 1, value, &(&1 + value))
+
+          has_even_num_of_digits(key) ->
+            key
+            |> split_digits()
+            |> Enum.reduce(acc, fn new_key, current_acc ->
+              Map.update(current_acc, new_key, value, &(&1 + value))
+            end)
+
+          true ->
+            Map.update(acc, key * 2024, value, &(&1 + value))
+        end
+      end)
+
+    blink(new_stone_freqs, blink - 1)
   end
 
   def has_even_num_of_digits(num) do
@@ -10,33 +44,18 @@ defmodule Day11 do
     rem(count, 2) == 0
   end
 
+  # I knew there was a "mathy" way to split an integer in half that would be efficient,
+  # but thanks to ChatGPT for providing an example.
+  # Originally I was using Enum.split and Integer.undigit to make it happen.
   def split_digits(num) do
-    digits = Integer.digits(num)
-    split = round(length(digits) / 2)
+    half = num |> Integer.digits() |> length() |> div(2)
 
-    digits |> Enum.split(split) |> Tuple.to_list() |> Enum.map(&Integer.undigits/1)
-  end
+    divisor = 10 ** half
 
-  def apply_rules(stones, 0) do
-    length(stones)
-  end
+    first = div(num, divisor)
+    last = rem(num, divisor)
 
-  def apply_rules(stones, blink) do
-    new_stones =
-      Enum.flat_map(stones, fn stone ->
-        cond do
-          stone == 0 ->
-            [1]
-
-          has_even_num_of_digits(stone) ->
-            split_digits(stone)
-
-          true ->
-            [stone * 2024]
-        end
-      end)
-
-    apply_rules(new_stones, blink - 1)
+    [first, last]
   end
 
   def load_data(file_name) do
@@ -49,5 +68,6 @@ defmodule Day11 do
       |> Enum.map(&String.to_integer/1)
     end)
     |> hd()
+    |> Enum.frequencies()
   end
 end
